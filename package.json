@@ -1,0 +1,24 @@
+{
+   "name": "habiticia_invocations",
+   "version": "1.0.0",
+   "description": "Auto-mating my different types of tasks for the user using Habitica.",
+   "main": "server.js",
+   "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+   },
+   "type": "module",
+   "repository": {
+      "type": "git",
+      "url": "git+https://github.com/EfrainAD/Habiticia_Invocations.git"
+   },
+   "author": "",
+   "license": "ISC",
+   "bugs": {
+      "url": "https://github.com/EfrainAD/Habiticia_Invocations/issues"
+   },
+   "homepage": "https://github.com/EfrainAD/Habiticia_Invocations#readme",
+   "dependencies": {
+      "dotenv": "^16.4.5",
+      "express": "^4.21.1"
+   }
+}
