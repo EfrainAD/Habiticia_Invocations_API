@@ -18,7 +18,9 @@
    },
    "homepage": "https://github.com/EfrainAD/Habiticia_Invocations#readme",
    "dependencies": {
+      "axios": "^1.7.7",
       "dotenv": "^16.4.5",
+      "dotenv-expand": "^11.0.6",
       "express": "^4.21.1"
    }
 }
