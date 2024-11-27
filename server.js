@@ -243,23 +243,24 @@ app.post(
          'https://habitica.com/api/v3/user/anonymized',
          { headers }
       )
-      const currentGear = userData.data.data.user.items.gear.equipped
+      const equippedGear = userData.data.data.user.items.gear.equipped
       const ownedGear = Object.keys(userData.data.data.user.items.gear.owned)
 
       const habiticaContent = await axios.get(
          'https://habitica.com/api/v3/content'
       )
-      const habiticaGearInfo = habiticaContent.data.data.gear.tree
+      const habiticaGearContent = habiticaContent.data.data.gear.tree
 
-      const ownedHighestIntGear = getUserHighestIntEquipment(habiticaGearInfo)
+      const ownedHighestIntGear =
+         getUserHighestIntEquipment(habiticaGearContent)
 
-      // Pick one hand weapon or two handed weapon
+      // Pick the best weapon combo
       // Get the INT values to evaluate best weapon choice
       const oneHandedInt = ownedHighestIntGear.weapon.oneHanded?.int || 0
       const twoHandedInt = ownedHighestIntGear.weapon.twoHanded?.int || 0
       const shieldInt = ownedHighestIntGear.shield?.int || 0
 
-      // Calculate the weapon setup to use at cron
+      // Calculate the weapon setup to use that will give a higher INT value
       const highestIntGear =
          oneHandedInt + shieldInt > twoHandedInt
             ? {
@@ -273,15 +274,15 @@ app.post(
                  shield: {},
               }
 
-      const keys = Object.keys(highestIntGear)
-      for (let i = 0; i < keys.length; i++) {
-         const key = keys[i]
+      const gearTypes = Object.keys(highestIntGear)
+      for (let i = 0; i < gearTypes.length; i++) {
+         const type = gearTypes[i]
          if (
-            highestIntGear[key].key &&
-            highestIntGear[key].key !== currentGear[key]
+            highestIntGear[type].key &&
+            highestIntGear[type].key !== equippedGear[type]
          ) {
-            const res = await axios.post(
-               `https://habitica.com/api/v3/user/equip/equipped/${highestIntGear[key].key}`,
+            await axios.post(
+               `https://habitica.com/api/v3/user/equip/equipped/${highestIntGear[type].key}`,
                {},
                { headers }
             )
@@ -289,7 +290,8 @@ app.post(
       }
 
       res.json({
-         message: 'Request was sent',
+         message:
+            'Request was sent to change equipped gear to be the users highest INT setup for a non INT based class',
       })
    })
 )
