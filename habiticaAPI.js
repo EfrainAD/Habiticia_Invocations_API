@@ -28,7 +28,8 @@ export const getUserData = asyncHandler(async () => {
          headers,
       }
    )
-   return userData.data.user
+
+   return userData.data.data.user
 })
 
 export const getTodaysDueDailies = asyncHandler(async () => {
