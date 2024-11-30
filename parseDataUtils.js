@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler'
 import { getHabiticaContentGear } from './habiticaAPI.js'
 
 export const getUserHighestIntEquipment = (
+   userClass,
    ownedGear,
    gearContent,
    results = {
@@ -19,6 +20,7 @@ export const getUserHighestIntEquipment = (
    if (typeof gearContent === 'object' && !gearContent.hasOwnProperty('int')) {
       for (const key in gearContent) {
          results = getUserHighestIntEquipment(
+            userClass,
             ownedGear,
             gearContent[key],
             results
@@ -29,6 +31,10 @@ export const getUserHighestIntEquipment = (
       // Check if owner owns it, and if gear is an int buff gear.
       if (ownedGear.includes(gearContent.key) && gearContent.int > 0) {
          const { type, twoHanded } = gearContent
+         // Add Class Bonus
+         if (gearContent.klass === userClass) {
+            gearContent.int *= 2
+         }
          if (type === 'weapon') {
             if (twoHanded) {
                if (
@@ -73,9 +79,10 @@ const getBestWeaponOption = ({ gear, attributes }) => {
    return oneHandedWeaponInt + shieldHandInt < twoHandedWeaponInt
 }
 
-export const calulateHiestint = asyncHandler(async (usersGear) => {
+export const calulateHiestint = asyncHandler(async (userClass, usersGear) => {
    const gearContent = await getHabiticaContentGear()
    const ownedHighestIntGear = getUserHighestIntEquipment(
+      userClass,
       usersGear,
       gearContent
    )

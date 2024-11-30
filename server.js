@@ -4,6 +4,7 @@ import express from 'express'
 import asyncHandler from 'express-async-handler'
 import {
    getHabiticaConnectionStatus,
+   getHabiticaContentGear,
    getTodaysDueDailies,
    getUserData,
    runCron,
@@ -37,8 +38,10 @@ app.get(
       let payload = {}
       if (type === 'user') {
          payload = await getUserData()
+      } else if (type === 'gear') {
+         payload = await getHabiticaContentGear()
       }
-      res.send(payload.stats.class)
+      res.send(payload)
    })
 )
 

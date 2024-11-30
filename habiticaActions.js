@@ -18,8 +18,9 @@ export const equipGearByHightestInt = asyncHandler(
    async (attribute = 'int') => {
       const userData = await getUserData()
 
+      const userClass = userData.stats.class
       const ownedGear = Object.keys(userData.items.gear.owned)
-      const highestIntGear = await calulateHiestint(ownedGear)
+      const highestIntGear = await calulateHiestint(userClass, ownedGear)
 
       const equippedGear = userData.items.gear.equipped
 
