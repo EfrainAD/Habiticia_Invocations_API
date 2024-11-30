@@ -5,9 +5,9 @@ import asyncHandler from 'express-async-handler'
 import {
    getHabiticaConnectionStatus,
    getTodaysDueDailies,
+   getUserData,
    runCron,
 } from './habiticaAPI.js'
-import { calulateHiestint } from './parseDataUtils.js'
 import { equipGearByHightestInt } from './habiticaActions.js'
 
 // Variables
@@ -26,6 +26,19 @@ app.get(
       const status = await getHabiticaConnectionStatus()
 
       res.json({ Habitica_Response: status })
+   })
+)
+
+// Get Info
+app.get(
+   '/info/:type',
+   asyncHandler(async (req, res) => {
+      const type = req.params.type
+      let payload = {}
+      if (type === 'user') {
+         payload = await getUserData()
+      }
+      res.send(payload.stats.class)
    })
 )
 
