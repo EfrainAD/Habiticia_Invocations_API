@@ -1,6 +1,6 @@
 import asyncHandler from 'express-async-handler'
 import { equip, getUserData } from './habiticaAPI.js'
-import { calulateHiestint } from './parseDataUtils.js'
+import { getUserBestGearByStat } from './parseDataUtils.js'
 
 const equipGears = asyncHandler(async (gearToEquip, currentGear) => {
    const allGearTypes = Object.keys(gearToEquip)
@@ -14,20 +14,23 @@ const equipGears = asyncHandler(async (gearToEquip, currentGear) => {
 })
 // Notes: habatica toggles equiping and unequiping, so you need make sure if the gear is already equiped to not send the request for that gear.
 
-export const equipGearByHightestInt = asyncHandler(
-   async (attribute = 'int') => {
-      const userData = await getUserData()
+export const equipBestGearForStat = asyncHandler(async (stat) => {
+   const userData = await getUserData()
 
-      const userClass = userData.stats.class
-      const ownedGear = Object.keys(userData.items.gear.owned)
-      const highestIntGear = await calulateHiestint(userClass, ownedGear)
+   const userClass = userData.stats.class
+   const ownedGear = Object.keys(userData.items.gear.owned)
+   const bestGearByStat = await getUserBestGearByStat(
+      userClass,
+      stat,
+      ownedGear
+   )
 
-      const equippedGear = userData.items.gear.equipped
+   const equippedGear = userData.items.gear.equipped
 
-      await equipGears(highestIntGear, equippedGear)
-      return {
-         postEquipGear: equippedGear,
-         newlyEquippedGear: highestIntGear,
-      }
+   await equipGears(bestGearByStat, equippedGear)
+
+   return {
+      postEquipGear: equippedGear,
+      newlyEquippedGear: bestGearByStat,
    }
-)
+})

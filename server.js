@@ -9,7 +9,7 @@ import {
    getUserData,
    runCron,
 } from './habiticaAPI.js'
-import { equipGearByHightestInt } from './habiticaActions.js'
+import { equipBestGearForStat } from './habiticaActions.js'
 
 // Variables
 const app = express()
@@ -47,13 +47,14 @@ app.get(
 
 // change weapon to the highest Int
 app.post(
-   '/changeWeaponInt',
+   '/changeGear/:stat',
    asyncHandler(async (req, res) => {
-      await equipGearByHightestInt()
+      const stat = req.params.stat
+
+      await equipBestGearForStat(stat)
 
       res.json({
-         message:
-            'Request was sent to change equipped gear to be the users highest INT setup for a non INT based class',
+         message: `Request was sent to change equipped gear to be the users highest ${stat} setup`,
       })
    })
 )

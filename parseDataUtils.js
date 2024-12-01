@@ -1,8 +1,9 @@
 import asyncHandler from 'express-async-handler'
 import { getHabiticaContentGear } from './habiticaAPI.js'
 
-export const getUserHighestIntEquipment = (
+export const parseUserHighestGearByStat = (
    userClass,
+   stat,
    ownedGear,
    gearContent,
    results = {
@@ -17,10 +18,11 @@ export const getUserHighestIntEquipment = (
    }
 ) => {
    // Drill to last object
-   if (typeof gearContent === 'object' && !gearContent.hasOwnProperty('int')) {
+   if (typeof gearContent === 'object' && !gearContent.hasOwnProperty(stat)) {
       for (const key in gearContent) {
-         results = getUserHighestIntEquipment(
+         results = parseUserHighestGearByStat(
             userClass,
+            stat,
             ownedGear,
             gearContent[key],
             results
@@ -28,17 +30,19 @@ export const getUserHighestIntEquipment = (
       }
    } else {
       // Now have the last nested object
-      // Check if owner owns it, and if gear is an int buff gear.
-      if (ownedGear.includes(gearContent.key) && gearContent.int > 0) {
+      // Check if
+      // 1. The owner owns it
+      // 2. If the gear is of the currect stat buff
+      if (ownedGear.includes(gearContent.key) && gearContent[stat] > 0) {
          const { type, twoHanded } = gearContent
          // Add Class Bonus
          if (gearContent.klass === userClass) {
-            gearContent.int *= 2
+            gearContent[stat] *= 2
          }
          if (type === 'weapon') {
             if (twoHanded) {
                if (
-                  results.weapon.twoHanded?.int < gearContent.int ||
+                  results.weapon.twoHanded?.[stat] < gearContent[stat] ||
                   Object.keys(results.weapon.twoHanded).length === 0
                ) {
                   results = {
@@ -48,7 +52,7 @@ export const getUserHighestIntEquipment = (
                }
             } else {
                if (
-                  results.weapon.oneHanded?.int < gearContent.int ||
+                  results.weapon.oneHanded?.[stat] < gearContent[stat] ||
                   Object.keys(results.weapon.oneHanded).length === 0
                ) {
                   results = {
@@ -60,7 +64,7 @@ export const getUserHighestIntEquipment = (
          } else {
             // Every other gear that not type weapon
             if (
-               results[type].int < gearContent.int ||
+               results[type][stat] < gearContent[stat] ||
                Object.keys(results[type]).length === 0
             ) {
                results = { ...results, [type]: gearContent }
@@ -71,39 +75,49 @@ export const getUserHighestIntEquipment = (
    return results
 }
 
-const getBestWeaponOption = ({ gear, attributes }) => {
-   const oneHandedWeaponInt = gear.weapon.oneHanded?.[attributes] || 0
-   const twoHandedWeaponInt = gear.weapon.twoHanded?.[attributes] || 0
-   const shieldHandInt = gear.shield?.[attributes] || 0
+// Check if user should use one handded weapon with shield, or a two handded weapon.
+const getBestWeaponOption = ({ gear, stat }) => {
+   // Option One - weapon and shield
+   const oneHandedWeaponStat = gear.weapon.oneHanded?.[stat] || 0
+   const shieldHandStat = gear.shield?.[stat] || 0
 
-   return oneHandedWeaponInt + shieldHandInt < twoHandedWeaponInt
-}
+   const weaponAndShieldStat = oneHandedWeaponStat + shieldHandStat
 
-export const calulateHiestint = asyncHandler(async (userClass, usersGear) => {
-   const gearContent = await getHabiticaContentGear()
-   const ownedHighestIntGear = getUserHighestIntEquipment(
-      userClass,
-      usersGear,
-      gearContent
-   )
+   // Option Two - two handed weapon (No Shield)
+   const twoHandedWeaponStat = gear.weapon.twoHanded?.[stat] || 0
 
-   const isTwoHandedWeapon = getBestWeaponOption({
-      gear: ownedHighestIntGear,
-      attributes: 'int',
-   })
+   // Choose which option
+   const isTwoHandedWeaponSetup = twoHandedWeaponStat > weaponAndShieldStat
 
-   // Calculate the weapon setup should be two handed weapon or one in each hand
-   const highestIntGearSetup = isTwoHandedWeapon
+   return isTwoHandedWeaponSetup
       ? {
-           ...ownedHighestIntGear,
-           weapon: ownedHighestIntGear.weapon.twoHanded,
+           ...gear,
+           weapon: gear.weapon.twoHanded,
            shield: {},
         }
       : {
-           ...ownedHighestIntGear,
-           weapon: ownedHighestIntGear.weapon.oneHanded,
-           shield: ownedHighestIntGear.shield,
+           ...gear,
+           weapon: gear.weapon.oneHanded,
+           shield: gear.shield,
         }
+}
 
-   return highestIntGearSetup
-})
+export const getUserBestGearByStat = asyncHandler(
+   async (userClass, stat, usersGear) => {
+      const gearContent = await getHabiticaContentGear()
+
+      const ownedHighestGearByStat = parseUserHighestGearByStat(
+         userClass,
+         stat,
+         usersGear,
+         gearContent
+      )
+
+      const optimalGearSetup = getBestWeaponOption({
+         gear: ownedHighestGearByStat,
+         stat: stat,
+      })
+
+      return optimalGearSetup
+   }
+)
