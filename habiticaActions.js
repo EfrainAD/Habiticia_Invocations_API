@@ -1,14 +1,21 @@
 import asyncHandler from 'express-async-handler'
 import { equip, getUserData } from './habiticaAPI.js'
-import { getUserBestGearByStat } from './parseDataUtils.js'
+import {
+   getUserBestGearByStat,
+   parseOwnedGear,
+   parseUserClass,
+   parseUserEquippedGear,
+} from './parseDataUtils.js'
 
-const equipGears = asyncHandler(async (gearToEquip, currentGear) => {
-   const allGearTypes = Object.keys(gearToEquip)
+export const equipGears = asyncHandler(async (gearsToEquip, currentGears) => {
+   const allGearTypes = Object.keys(gearsToEquip)
+
    for (const gearType of allGearTypes) {
-      const gear = gearToEquip[gearType]
+      const gear = gearsToEquip[gearType]
+      const currentGear = currentGears[gearType]
 
-      if (gear.key && gear.key !== currentGear[gearType]) {
-         await equip(gear.key)
+      if (gear !== currentGear) {
+         await equip(gear)
       }
    }
 })
@@ -17,20 +24,21 @@ const equipGears = asyncHandler(async (gearToEquip, currentGear) => {
 export const equipBestGearForStat = asyncHandler(async (stat) => {
    const userData = await getUserData()
 
-   const userClass = userData.stats.class
-   const ownedGear = Object.keys(userData.items.gear.owned)
+   const userClass = parseUserClass(userData)
+   const ownedGear = parseOwnedGear(userData)
+
    const bestGearByStat = await getUserBestGearByStat(
       userClass,
       stat,
       ownedGear
    )
 
-   const equippedGear = userData.items.gear.equipped
+   const equippedGear = parseUserEquippedGear(userData)
 
    await equipGears(bestGearByStat, equippedGear)
 
    return {
       postEquipGear: equippedGear,
-      newlyEquippedGear: bestGearByStat,
+      equippedGear: bestGearByStat,
    }
 })

@@ -1,6 +1,21 @@
 import asyncHandler from 'express-async-handler'
 import { getHabiticaContentGear } from './habiticaAPI.js'
 
+const formatGear = (gearObj) => {
+   const allGearTypes = Object.keys(gearObj)
+   const newGearObj = {}
+
+   for (const gearType of allGearTypes) {
+      const gear = gearObj[gearType]
+
+      if (gear.key) {
+         newGearObj[gearType] = gear.key
+      }
+   }
+
+   return newGearObj
+}
+
 export const parseUserHighestGearByStat = (
    userClass,
    stat,
@@ -37,7 +52,7 @@ export const parseUserHighestGearByStat = (
          const { type, twoHanded } = gearContent
          // Add Class Bonus
          if (gearContent.klass === userClass) {
-            gearContent[stat] *= 2
+            gearContent[stat] += gearContent[stat] / 2
          }
          if (type === 'weapon') {
             if (twoHanded) {
@@ -89,17 +104,13 @@ const getBestWeaponOption = ({ gear, stat }) => {
    // Choose which option
    const isTwoHandedWeaponSetup = twoHandedWeaponStat > weaponAndShieldStat
 
-   return isTwoHandedWeaponSetup
-      ? {
-           ...gear,
-           weapon: gear.weapon.twoHanded,
-           shield: {},
-        }
-      : {
-           ...gear,
-           weapon: gear.weapon.oneHanded,
-           shield: gear.shield,
-        }
+   return {
+      ...gear,
+      weapon: isTwoHandedWeaponSetup
+         ? gear.weapon.twoHanded
+         : gear.weapon.oneHanded,
+      shield: isTwoHandedWeaponSetup ? {} : gear.shield,
+   }
 }
 
 export const getUserBestGearByStat = asyncHandler(
@@ -118,6 +129,11 @@ export const getUserBestGearByStat = asyncHandler(
          stat: stat,
       })
 
-      return optimalGearSetup
+      return formatGear(optimalGearSetup)
    }
 )
+
+export const parseUserEquippedGear = (user) => user.items.gear.equipped
+
+export const parseUserClass = (user) => user.stats.class
+export const parseOwnedGear = (user) => Object.keys(user.items.gear.owned)
