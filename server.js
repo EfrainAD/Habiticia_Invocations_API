@@ -9,13 +9,14 @@ import {
    getUserData,
    runCron,
 } from './habiticaAPI.js'
-import { equipBestGearForStat } from './habiticaActions.js'
+import { equipBestGearForStat, equipGears } from './habiticaActions.js'
 import { parseUserEquippedGear } from './parseDataUtils.js'
 import { validateStat } from './utils.js'
 
 // Variables
 const app = express()
 const PORT = process.env.PORT || 8000
+const CRON_GEAR_STAT = 'int'
 
 // Check that the server is running
 app.get('/', (req, res) => {
@@ -77,19 +78,29 @@ app.post(
 
 // Custom cron "run-cron-task"
 app.get(
-   '/run-cron-task',
+   '/run-cron-task/:stat',
    asyncHandler(async (req, res) => {
       const dueDailiesCount = await getTodaysDueDailies()
+      const gearStat = req.params.stat || CRON_GEAR_STAT
 
-      // Run cron
+      validateStat(gearStat)
+
       if (dueDailiesCount === 0) {
-         // Change weapon to hightest In, then wait.
+         const { postEquipGear, equippedGear } = await equipBestGearForStat(
+            gearStat
+         )
+
          const cronResponse = await runCron()
-         // Change back
-         res.json(cronResponse.data)
+
+         await equipGears(postEquipGear, equippedGear)
+
+         res.json({
+            message: `Gear with the highest ${gearStat} was used before cron`,
+            habiticaResponse: cronResponse.data,
+         })
       } else {
          res.json({
-            message: ` Cancled do to haveing ${dueDailiesCount} dailies not competed.`,
+            message: `Canceled do to haveing ${dueDailiesCount} dailies not competed.`,
          })
       }
    })
