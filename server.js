@@ -10,6 +10,7 @@ import {
    runCron,
 } from './habiticaAPI.js'
 import { equipBestGearForStat } from './habiticaActions.js'
+import { parseUserEquippedGear } from './parseDataUtils.js'
 
 // Variables
 const app = express()
@@ -36,11 +37,23 @@ app.get(
    asyncHandler(async (req, res) => {
       const type = req.params.type
       let payload = {}
-      if (type === 'user') {
-         payload = await getUserData()
-      } else if (type === 'gear') {
-         payload = await getHabiticaContentGear()
+
+      switch (type) {
+         case 'gear':
+            payload = await getHabiticaContentGear()
+            break
+         case 'user':
+            payload = await getUserData()
+            break
+         case 'userequipgear':
+            const user = await getUserData()
+            payload = parseUserEquippedGear(user)
+            break
+         default:
+            throw new Error(`Path ${type} not found`)
+            break
       }
+
       res.send(payload)
    })
 )
