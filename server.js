@@ -11,6 +11,7 @@ import {
 } from './habiticaAPI.js'
 import { equipBestGearForStat } from './habiticaActions.js'
 import { parseUserEquippedGear } from './parseDataUtils.js'
+import { validateStat } from './utils.js'
 
 // Variables
 const app = express()
@@ -63,6 +64,8 @@ app.post(
    '/changeGear/:stat',
    asyncHandler(async (req, res) => {
       const stat = req.params.stat
+
+      validateStat(stat)
 
       await equipBestGearForStat(stat)
 
